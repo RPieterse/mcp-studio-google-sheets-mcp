@@ -3,6 +3,12 @@ import type { Row, SheetsApi, ToolResult } from "./types.js";
 export interface ToolContext {
   api: SheetsApi;
   defaultShareEmail: string;
+  /** The service-account identity that creates / owns every sheet this MCP
+   *  makes. Surfaced in create_sheet output so the caller can see exactly
+   *  which account they need to share the file with manually (or who to
+   *  grant access to a Drive folder, etc.) if the auto-share didn't land
+   *  on the right user. */
+  serviceAccountEmail: string;
 }
 
 function err(text: string): ToolResult {
@@ -65,16 +71,33 @@ async function createSheet(
     share_with_email: explicitShare,
   });
 
+  // Try the share but DON'T let a share failure tank the whole call —
+  // the sheet was created successfully, the caller just needs to know
+  // whether they can actually access it. Surface the outcome either way.
+  let shareStatus: string;
   if (shareEmail) {
-    await ctx.api.shareSpreadsheet(result.spreadsheet_id, shareEmail);
+    try {
+      await ctx.api.shareSpreadsheet(result.spreadsheet_id, shareEmail);
+      shareStatus = `shared with: ${shareEmail} (writer)`;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      shareStatus = `share to ${shareEmail} FAILED: ${msg}`;
+    }
+  } else {
+    shareStatus =
+      "shared with: (none — no GOOGLE_USER_EMAIL configured and no share_with_email argument provided)";
   }
 
+  // Always print the owner (service account email) so the user can see
+  // which identity will be listed as the file owner in Drive — useful when
+  // diagnosing "why does my colleague's account see this but mine doesn't".
   const lines = [
     `Created spreadsheet "${result.title}".`,
     `spreadsheet_id: ${result.spreadsheet_id}`,
     `url: ${result.url}`,
+    `owner: ${ctx.serviceAccountEmail} (service account)`,
+    shareStatus,
   ];
-  if (shareEmail) lines.push(`shared with: ${shareEmail}`);
   return ok(lines.join("\n"));
 }
 
