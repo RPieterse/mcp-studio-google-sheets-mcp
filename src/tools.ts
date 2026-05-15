@@ -42,9 +42,60 @@ export async function handleTool(
         return err(`Unknown tool: ${name}`);
     }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return err(`${name} failed: ${msg}`);
+    return err(`${name} failed: ${formatGoogleError(e)}`);
   }
+}
+
+/**
+ * Google APIs (via googleapis / gaxios) wrap their JSON error bodies inside
+ * a thrown Error. The plain `.message` is often just "The caller does not
+ * have permission" with none of the helpful detail — reason codes, the
+ * project hint, the specific permission name. Pull that detail out so
+ * callers see something they can act on instead of a riddle.
+ */
+function formatGoogleError(e: unknown): string {
+  if (!(e instanceof Error)) return String(e);
+  const base = e.message;
+  // gaxios attaches { response: { status, data: { error: { code, message,
+  // status, details, errors[] } } } } on the Error.
+  const anyErr = e as unknown as {
+    response?: {
+      status?: number;
+      data?: {
+        error?: {
+          code?: number;
+          status?: string;
+          message?: string;
+          errors?: { reason?: string; message?: string; domain?: string }[];
+          details?: unknown[];
+        };
+      };
+    };
+  };
+  const gErr = anyErr.response?.data?.error;
+  if (!gErr) return base;
+  const lines: string[] = [];
+  // The terse line first (already in base), then the structured detail.
+  if (gErr.message && gErr.message !== base) lines.push(gErr.message);
+  if (gErr.status) lines.push(`status: ${gErr.status}`);
+  if (gErr.code !== undefined) lines.push(`code: ${gErr.code}`);
+  if (anyErr.response?.status !== undefined)
+    lines.push(`http: ${anyErr.response.status}`);
+  if (Array.isArray(gErr.errors)) {
+    for (const inner of gErr.errors) {
+      const parts: string[] = [];
+      if (inner.reason) parts.push(`reason=${inner.reason}`);
+      if (inner.domain) parts.push(`domain=${inner.domain}`);
+      if (inner.message) parts.push(inner.message);
+      if (parts.length > 0) lines.push(parts.join("; "));
+    }
+  }
+  if (Array.isArray(gErr.details) && gErr.details.length > 0) {
+    // details are richly typed protobuf Any-like objects; stringify
+    // so the user at least sees the metadata fields (reason, domain, etc.)
+    lines.push(`details: ${JSON.stringify(gErr.details)}`);
+  }
+  return lines.length > 0 ? `${base}\n  ${lines.join("\n  ")}` : base;
 }
 
 async function createSheet(
