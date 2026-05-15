@@ -48,30 +48,12 @@
     ],
     "secrets": ["gsheets_credentials"]
   },
-  "storage": [
-    {
-      "key": "last_sheet_id",
-      "type": "text",
-      "label": "Last sheet id",
-      "description": "Spreadsheet id of the most recently created sheet. Other quick commands can target it via ${storage.last_sheet_id}.",
-      "default": ""
-    }
-  ],
   "quick_commands": [
     {
       "trigger": "sheet_create",
       "description": "Create a new Google Sheet with the given title",
       "tool": "create_sheet",
       "arg_key": "title"
-    },
-    {
-      "trigger": "sheet_read",
-      "description": "Read a range from the last-created sheet (default A1:Z100)",
-      "tool": "read_range",
-      "args": {
-        "spreadsheet_id": "${storage.last_sheet_id}",
-        "range": "A1:Z100"
-      }
     }
   ]
 }
