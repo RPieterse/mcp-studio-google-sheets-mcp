@@ -1,0 +1,71 @@
+{
+  "manifest_version": 1,
+  "id": "com.rohanpieterse.gsheets",
+  "name": "Google Sheets",
+  "version": "0.1.0",
+  "description": "Create, read, and modify Google Sheets via a Google service account. Useful for capturing scraped data, agent output, or reports as a shareable spreadsheet.",
+  "homepage": "https://developers.google.com/sheets/api",
+  "mcp": {
+    "transport": "stdio",
+    "command": "node",
+    "args": ["./dist/index.js"],
+    "env": {
+      "GOOGLE_SERVICE_ACCOUNT_JSON": "${secrets.gsheets_credentials.service_account_json}",
+      "GOOGLE_USER_EMAIL": "${secrets.gsheets_credentials.user_email}"
+    }
+  },
+  "install": [
+    { "shell": "npm install" },
+    { "shell": "npm run build" }
+  ],
+  "auth": {
+    "type": "api_key",
+    "fields": [
+      {
+        "key": "service_account_json",
+        "label": "Service account JSON (full file contents)",
+        "secret": true
+      },
+      {
+        "key": "user_email",
+        "label": "Your Google email (sheets will be shared with you as writer)",
+        "secret": false
+      }
+    ],
+    "store_as": "gsheets_credentials"
+  },
+  "permissions": {
+    "network": [
+      "sheets.googleapis.com",
+      "www.googleapis.com",
+      "oauth2.googleapis.com"
+    ],
+    "secrets": ["gsheets_credentials"]
+  },
+  "storage": [
+    {
+      "key": "last_sheet_id",
+      "type": "text",
+      "label": "Last sheet id",
+      "description": "Spreadsheet id of the most recently created sheet. Other quick commands can target it via ${storage.last_sheet_id}.",
+      "default": ""
+    }
+  ],
+  "quick_commands": [
+    {
+      "trigger": "sheet_create",
+      "description": "Create a new Google Sheet with the given title",
+      "tool": "create_sheet",
+      "arg_key": "title"
+    },
+    {
+      "trigger": "sheet_read",
+      "description": "Read a range from the last-created sheet (default A1:Z100)",
+      "tool": "read_range",
+      "args": {
+        "spreadsheet_id": "${storage.last_sheet_id}",
+        "range": "A1:Z100"
+      }
+    }
+  ]
+}

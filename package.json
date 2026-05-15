@@ -1,0 +1,25 @@
+{
+  "name": "google-sheets-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for creating and modifying Google Sheets via a service account.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "google-sheets-mcp": "./dist/index.js"
+  },
+  "files": ["dist", "widget.manifest.json"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
