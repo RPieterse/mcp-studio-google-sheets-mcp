@@ -11,7 +11,8 @@
     "args": ["./dist/index.js"],
     "env": {
       "GOOGLE_SERVICE_ACCOUNT_JSON": "${secrets.gsheets_credentials.service_account_json}",
-      "GOOGLE_USER_EMAIL": "${secrets.gsheets_credentials.user_email}"
+      "GOOGLE_USER_EMAIL": "${secrets.gsheets_credentials.user_email}",
+      "GOOGLE_DRIVE_FOLDER_ID": "${secrets.gsheets_credentials.parent_folder_id}"
     }
   },
   "install": [
@@ -29,6 +30,11 @@
       {
         "key": "user_email",
         "label": "Your Google email (sheets will be shared with you as writer)",
+        "secret": false
+      },
+      {
+        "key": "parent_folder_id",
+        "label": "Drive folder ID (REQUIRED on personal Google accounts — service accounts have no Drive of their own. Create a folder, share it with the service account email as Editor, paste the folder ID from the URL after /folders/. Leave blank on Workspace accounts with Shared Drives.)",
         "secret": false
       }
     ],

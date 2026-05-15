@@ -34,13 +34,39 @@ export class GoogleSheetsApi implements SheetsApi {
   ) {}
 
   async createSpreadsheet(input: CreateSheetInput): Promise<CreateSheetResult> {
-    const res = await this.sheets.spreadsheets.create({
-      requestBody: { properties: { title: input.title } },
-      fields: "spreadsheetId,spreadsheetUrl,properties.title",
-    });
-    const spreadsheet_id = res.data.spreadsheetId ?? "";
-    const url = res.data.spreadsheetUrl ?? "";
-    const title = res.data.properties?.title ?? input.title;
+    // Service accounts in personal Google projects can't create files in
+    // their own Drive. The workaround is to create the spreadsheet via
+    // the Drive API directly, specifying a parent folder the SA already
+    // has write access to (because the user explicitly shared it).
+    // If no parent_folder_id is provided we fall back to the Sheets API
+    // path, which works for Workspace + Shared Drive setups.
+    let spreadsheet_id = "";
+    let url = "";
+    let title = input.title;
+    if (input.parent_folder_id) {
+      const driveRes = await this.drive.files.create({
+        requestBody: {
+          name: input.title,
+          mimeType: "application/vnd.google-apps.spreadsheet",
+          parents: [input.parent_folder_id],
+        },
+        fields: "id,name,webViewLink",
+        supportsAllDrives: true,
+      });
+      spreadsheet_id = driveRes.data.id ?? "";
+      url =
+        driveRes.data.webViewLink ??
+        `https://docs.google.com/spreadsheets/d/${spreadsheet_id}/edit`;
+      title = driveRes.data.name ?? input.title;
+    } else {
+      const res = await this.sheets.spreadsheets.create({
+        requestBody: { properties: { title: input.title } },
+        fields: "spreadsheetId,spreadsheetUrl,properties.title",
+      });
+      spreadsheet_id = res.data.spreadsheetId ?? "";
+      url = res.data.spreadsheetUrl ?? "";
+      title = res.data.properties?.title ?? input.title;
+    }
     if (!spreadsheet_id) {
       throw new Error("Google did not return a spreadsheetId");
     }

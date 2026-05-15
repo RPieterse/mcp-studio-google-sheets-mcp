@@ -9,6 +9,15 @@ export interface ToolContext {
    *  grant access to a Drive folder, etc.) if the auto-share didn't land
    *  on the right user. */
   serviceAccountEmail: string;
+  /** Drive folder ID to drop newly-created sheets into. REQUIRED for
+   *  service accounts in personal (non-Workspace) Google Cloud projects —
+   *  those SAs have no Drive of their own, so the API rejects file
+   *  creation outright. The user creates a regular Drive folder, shares
+   *  it with the SA as Editor, and the SA then "creates" the sheet inside
+   *  that folder (where it has explicit write permission). Empty string
+   *  = no default folder; the sheet attempts to land in the SA's root,
+   *  which only works for Workspace + Shared Drive setups. */
+  defaultParentFolderId: string;
 }
 
 function err(text: string): ToolResult {
@@ -116,10 +125,22 @@ async function createSheet(
   const trimmedDefault = ctx.defaultShareEmail.trim();
   const shareEmail = explicitShare ?? (trimmedDefault ? trimmedDefault : undefined);
 
+  // Per-call parent_folder_id overrides the env default. Empty string is
+  // treated the same as undefined so the user can blank the field to opt
+  // out for a single call.
+  const explicitParent =
+    typeof args.parent_folder_id === "string" && args.parent_folder_id.trim()
+      ? args.parent_folder_id.trim()
+      : undefined;
+  const parentFolderId =
+    explicitParent ??
+    (ctx.defaultParentFolderId ? ctx.defaultParentFolderId : undefined);
+
   const result = await ctx.api.createSpreadsheet({
     title,
     headers,
     share_with_email: explicitShare,
+    parent_folder_id: parentFolderId,
   });
 
   // Try the share but DON'T let a share failure tank the whole call —
@@ -147,6 +168,9 @@ async function createSheet(
     `spreadsheet_id: ${result.spreadsheet_id}`,
     `url: ${result.url}`,
     `owner: ${ctx.serviceAccountEmail} (service account)`,
+    parentFolderId
+      ? `parent folder: ${parentFolderId}`
+      : "parent folder: (none — using service-account root, only works on Workspace + Shared Drive)",
     shareStatus,
   ];
   return ok(lines.join("\n"));

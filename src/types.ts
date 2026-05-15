@@ -5,6 +5,10 @@ export interface CreateSheetInput {
   title: string;
   headers?: string[];
   share_with_email?: string;
+  /** If set, the new file is moved into this Drive folder after creation.
+   *  Required on personal Google projects where service accounts can't
+   *  create files in their own Drive. */
+  parent_folder_id?: string;
 }
 
 export interface CreateSheetResult {

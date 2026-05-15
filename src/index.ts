@@ -6,6 +6,7 @@ import { parseServiceAccountJson } from "./credentials.js";
 
 const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "";
 const defaultShareEmail = (process.env.GOOGLE_USER_EMAIL ?? "").trim();
+const defaultParentFolderId = (process.env.GOOGLE_DRIVE_FOLDER_ID ?? "").trim();
 
 let api;
 let serviceAccountEmail = "";
@@ -19,6 +20,11 @@ try {
   process.exit(1);
 }
 
-const server = createServer({ api, defaultShareEmail, serviceAccountEmail });
+const server = createServer({
+  api,
+  defaultShareEmail,
+  serviceAccountEmail,
+  defaultParentFolderId,
+});
 const transport = new StdioServerTransport();
 await server.connect(transport);

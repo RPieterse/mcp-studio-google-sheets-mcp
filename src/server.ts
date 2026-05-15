@@ -24,6 +24,11 @@ const TOOLS = [
           description:
             "Optional email to share the sheet with as writer. Defaults to the GOOGLE_USER_EMAIL configured on install.",
         },
+        parent_folder_id: {
+          type: "string",
+          description:
+            "Drive folder ID (the part of the Drive URL after /folders/). The new sheet is created INSIDE this folder. Required on personal Google projects — share the folder with the service account email as Editor first. Defaults to GOOGLE_DRIVE_FOLDER_ID configured on install.",
+        },
       },
       required: ["title"],
       additionalProperties: false,
