@@ -53,7 +53,8 @@
       "trigger": "sheet_create",
       "description": "Create a new Google Sheet with the given title",
       "tool": "create_sheet",
-      "arg_key": "title"
+      "arg_key": "title",
+      "platforms": ["desktop", "mobile", "cli"]
     }
   ]
 }
