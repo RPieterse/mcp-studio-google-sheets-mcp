@@ -2,7 +2,7 @@
   "manifest_version": 1,
   "id": "com.rohanpieterse.gsheets",
   "name": "Google Sheets",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create, read, and modify Google Sheets via a Google service account. Useful for capturing scraped data, agent output, or reports as a shareable spreadsheet.",
   "homepage": "https://developers.google.com/sheets/api",
   "mcp": {
